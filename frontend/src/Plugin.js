@@ -289,6 +289,9 @@ export default function Plugin() {
       <ListHeader
         title="Nebula"
         description="Overlay mesh network (slackhq/nebula)"
+        mark="nb"
+        status={st.Running && st.InterfaceUp ? 'Connected' : st.Running ? 'Starting' : 'Stopped'}
+        statusAction={st.Running && st.InterfaceUp ? 'success' : st.Running ? 'warning' : 'muted'}
       >
         <Button size="sm" variant="outline" onPress={restart} isDisabled={!enabled}>
           <ButtonText>Restart</ButtonText>
