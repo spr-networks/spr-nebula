@@ -1,0 +1,36 @@
+version: '3.4'
+
+x-labels:
+  &default-labels
+  # constant (not $CI) so digests are reproducible across CI/local
+  org.supernetworks.ci: "true"
+  org.supernetworks.version: ${RELEASE_VERSION:-latest}${RELEASE_CHANNEL:-}
+
+services:
+  spr-nebula:
+    container_name: spr-nebula
+    image: ghcr.io/spr-networks/spr-nebula:${RELEASE_VERSION:-latest}${RELEASE_CHANNEL:-}
+    build:
+      context: "${BUILDCTX:-.}"
+      labels: *default-labels
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      nebulanet:
+    volumes:
+      - "${SUPERDIR}./state/plugins/spr-nebula:/state/plugins/spr-nebula"
+      - "${SUPERDIR}./state/public/:/state/public/:ro"
+      - "${SUPERDIR}./state/api/:/state/api/:ro"
+      - "${SUPERDIR}./configs/base/config.sh:/configs/base/config.sh:ro"
+      - "${SUPERDIR}./configs/plugins/spr-nebula:/configs/spr-nebula"
+
+# Note: if updating the bridge name, also update gSPRNebulaInterface in
+# code/nebula_plugin.go and the NetworkCapabilities.Interface in plugin.json.
+networks:
+  nebulanet:
+    driver_opts:
+      com.docker.network.bridge.name: spr-nebula
