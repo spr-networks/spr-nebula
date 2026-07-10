@@ -4,7 +4,7 @@
   "UnixPath": "/state/plugins/spr-nebula/socket",
   "URI": "spr-nebula",
   "HasUI": true,
-  "Icon": "BlocksIcon",
+  "Icon": "ChartNetwork",
   "SandboxedUI": false,
   "InstallTokenPath": "/configs/plugins/spr-nebula/api-token",
   "NetworkCapabilities": {

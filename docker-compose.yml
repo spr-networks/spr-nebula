@@ -32,5 +32,6 @@ services:
 # code/nebula_plugin.go and the NetworkCapabilities.Interface in plugin.json.
 networks:
   nebulanet:
+    name: spr-nebula
     driver_opts:
       com.docker.network.bridge.name: spr-nebula
