@@ -6,7 +6,6 @@ package main
 // "root" anchor node.
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 	"sort"
@@ -122,8 +121,5 @@ func buildTopology(cfg Config, st StatusResponse) Topology {
 
 func (p *nebulaPlugin) handleTopology(w http.ResponseWriter, r *http.Request) {
 	topo := buildTopology(snapshotConfig(), p.sup.buildStatus())
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(topo); err != nil {
-		http.Error(w, err.Error(), 500)
-	}
+	writeJSON(w, topo)
 }

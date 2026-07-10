@@ -24,6 +24,16 @@ type nebulaPlugin struct {
 	sup *Supervisor
 }
 
+// writeJSON keeps the response contract explicit. net/http otherwise sniffs
+// encoded JSON as text/plain, which makes the plugin UI return a string instead
+// of decoding the response object.
+func writeJSON(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.Println("encoding response failed:", err)
+	}
+}
+
 // configResponse is what GET /config returns: the stored config plus derived
 // state. Private keys are never part of Config — nothing to redact, and no
 // endpoint ever returns ca.key or host.key.
@@ -39,9 +49,7 @@ func (p *nebulaPlugin) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 		CAConfigured:   caConfigured(),
 		CertConfigured: certConfigured(),
 	}
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), 500)
-	}
+	writeJSON(w, resp)
 }
 
 func (p *nebulaPlugin) handlePutConfig(w http.ResponseWriter, r *http.Request) {
@@ -70,9 +78,7 @@ func (p *nebulaPlugin) handlePutConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *nebulaPlugin) handleStatus(w http.ResponseWriter, r *http.Request) {
-	if err := json.NewEncoder(w).Encode(p.sup.buildStatus()); err != nil {
-		http.Error(w, err.Error(), 500)
-	}
+	writeJSON(w, p.sup.buildStatus())
 }
 
 func (p *nebulaPlugin) handleRestart(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +90,7 @@ func (p *nebulaPlugin) handleRestart(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"status": "restarted"})
+	writeJSON(w, map[string]string{"status": "restarted"})
 }
 
 // spaHandler serves the bundled single-file UI.

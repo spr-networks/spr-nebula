@@ -320,8 +320,15 @@ export default function Plugin() {
       .get(`${PLUGIN_BASE}/status`)
       .then((s) => {
         setStatus(s)
-        setCAConfigured(!!s.CAConfigured)
-        setCertConfigured(!!s.CertConfigured)
+        // Config is authoritative. Only accept the derived status flags when
+        // they are actually present, so a legacy/string response cannot erase
+        // known credential state.
+        if (s && typeof s.CAConfigured === 'boolean') {
+          setCAConfigured(s.CAConfigured)
+        }
+        if (s && typeof s.CertConfigured === 'boolean') {
+          setCertConfigured(s.CertConfigured)
+        }
       })
       .catch(() => {})
   }
@@ -395,7 +402,22 @@ export default function Plugin() {
         alert.success('CA created — the private key stays on the router')
         refreshStatus()
       })
-      .catch((err) => alert.error('Failed to create CA', err))
+      .catch((err) => {
+        if (err && err.status === 409 && !force) {
+          return Promise.all([
+            api.get(`${PLUGIN_BASE}/config`),
+            api.get(`${PLUGIN_BASE}/ca`)
+          ])
+            .then(([config, ca]) => {
+              if (!config.CAConfigured) throw err
+              setCAConfigured(true)
+              setCaCert(ca.CACert || '')
+              alert.info('CA already configured — using the existing CA')
+            })
+            .catch((recoveryErr) => alert.error('Failed to create CA', recoveryErr))
+        }
+        alert.error('Failed to create CA', err)
+      })
       .finally(() => setCreatingCA(false))
   }
 

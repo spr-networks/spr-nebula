@@ -116,7 +116,7 @@ func (p *nebulaPlugin) handleCreateCA(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"CACert": string(caPEM)})
+	writeJSON(w, map[string]string{"CACert": string(caPEM)})
 }
 
 // GET /ca — public part of the CA only.
@@ -126,7 +126,7 @@ func (p *nebulaPlugin) handleGetCA(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no CA configured", 404)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"CACert": string(caPEM)})
+	writeJSON(w, map[string]string{"CACert": string(caPEM)})
 }
 
 type signRequest struct {
@@ -246,7 +246,7 @@ func (p *nebulaPlugin) handleSignCert(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		go p.sup.RestartIfEnabled()
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		writeJSON(w, map[string]interface{}{
 			"Cert": string(crtPEM), "Installed": true,
 		})
 		return
@@ -259,7 +259,7 @@ func (p *nebulaPlugin) handleSignCert(w http.ResponseWriter, r *http.Request) {
 	}
 	// The private key exists only in this response; the temp copy is removed
 	// by the deferred cleanup above.
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	writeJSON(w, map[string]interface{}{
 		"Cert": string(crtPEM), "Key": string(keyPEM), "Installed": false,
 	})
 }
@@ -393,7 +393,7 @@ func (p *nebulaPlugin) handleImportKeys(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 	go p.sup.RestartIfEnabled()
-	json.NewEncoder(w).Encode(map[string]bool{
+	writeJSON(w, map[string]bool{
 		"CAConfigured":   caConfigured(),
 		"CertConfigured": certConfigured(),
 	})

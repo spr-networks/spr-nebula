@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -292,6 +293,34 @@ func TestConfigResponseHasNoKeyMaterial(t *testing.T) {
 	for _, banned := range []string{"PRIVATE KEY", "CAKey", "HostKey", "APIToken"} {
 		if strings.Contains(string(data), banned) {
 			t.Errorf("config response contains %q: %s", banned, data)
+		}
+	}
+}
+
+func TestConfigResponseIsJSON(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	writeJSON(recorder, configResponse{Config: defaultConfig()})
+	if got := recorder.Header().Get("Content-Type"); got != "application/json" {
+		t.Fatalf("Content-Type = %q, want application/json", got)
+	}
+	var response configResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		t.Fatalf("response is not JSON: %v", err)
+	}
+}
+
+func TestCredentialFilesLiveUnderConfigDir(t *testing.T) {
+	for name, path := range map[string]string{
+		"config":    ConfigFile,
+		"generated": NebulaConfigFile,
+		"CA cert":   CACertPath,
+		"CA key":    CAKeyPath,
+		"host cert": HostCertPath,
+		"host key":  HostKeyPath,
+	} {
+		rel, err := filepath.Rel(ConfigDir, path)
+		if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+			t.Errorf("%s path %q is not under config dir %q", name, path, ConfigDir)
 		}
 	}
 }
