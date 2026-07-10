@@ -144,8 +144,9 @@ validation plus quoting.
 - **Overlay firewall:** the generated nebula config denies all inbound overlay
   traffic and allows all outbound by default. Enable inbound ICMP with the
   toggle, or extend the generator for finer rules.
-- **SPR policies:** the container gets `wan` (UDP to lighthouses/peers) and
-  `dns` (resolve static host map hostnames) only.
+- **SPR policies:** the container gets `wan` (UDP to lighthouses/peers),
+  `dns` (resolve static host map hostnames), and the `nebula` group. It has no
+  `lan` policy.
 
 ## Reproducible builds
 

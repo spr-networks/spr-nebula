@@ -11,7 +11,7 @@
   "NetworkCapabilities": {
     "Interface": "spr-nebula",
     "Policies": ["wan", "dns"],
-    "Groups": []
+    "Groups": ["nebula"]
   },
   "Enabled": true
 }

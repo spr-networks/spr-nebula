@@ -47,6 +47,6 @@ API=127.0.0.1
 curl "http://${API}/firewall/custom_interface" \
 -H "Authorization: Bearer ${SPR_API_TOKEN}" \
 -X 'PUT' \
---data-raw "{\"SrcIP\":\"${CONTAINER_IP}\",\"Interface\":\"spr-nebula\",\"Policies\":[\"wan\",\"dns\"]}"
+--data-raw "{\"SrcIP\":\"${CONTAINER_IP}\",\"Interface\":\"spr-nebula\",\"Policies\":[\"wan\",\"dns\"],\"Groups\":[\"nebula\"]}"
 
 docker compose restart
