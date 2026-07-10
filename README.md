@@ -1,5 +1,7 @@
 # spr-nebula
 
+<img width="850" alt="spr-nebula UI preview" src="docs/screenshot.png" />
+
 [Nebula](https://github.com/slackhq/nebula) overlay mesh networking for the
 [SPR — Secure Programmable Router](https://github.com/spr-networks/super).
 
