@@ -137,6 +137,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /status", plugin.handleStatus)
+	mux.HandleFunc("GET /topology", plugin.handleTopology)
 	mux.HandleFunc("GET /config", plugin.handleGetConfig)
 	mux.HandleFunc("PUT /config", plugin.handlePutConfig)
 	mux.HandleFunc("POST /restart", plugin.handleRestart)

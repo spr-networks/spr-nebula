@@ -18,10 +18,11 @@ import (
 )
 
 type Supervisor struct {
-	mtx      sync.Mutex
-	cmd      *exec.Cmd
-	done     chan struct{}
-	stopping bool
+	mtx       sync.Mutex
+	cmd       *exec.Cmd
+	done      chan struct{}
+	stopping  bool
+	startedAt time.Time
 }
 
 func (s *Supervisor) Running() bool {
@@ -62,6 +63,7 @@ func (s *Supervisor) Start() error {
 	log.Printf("nebula started (pid %d, mode %s)", cmd.Process.Pid, cfg.Mode)
 	done := make(chan struct{})
 	s.cmd, s.done = cmd, done
+	s.startedAt = time.Now()
 	go s.waiter(cmd, done)
 	return nil
 }
@@ -165,8 +167,18 @@ type StatusResponse struct {
 	CAConfigured   bool
 	CertConfigured bool
 	NebulaVersion  string      `json:",omitempty"`
+	StartedAt      string      `json:",omitempty"` // RFC3339, present while running
 	CertInfo       interface{} `json:",omitempty"`
 	Message        string      `json:",omitempty"`
+}
+
+func (s *Supervisor) startedAtRFC3339() string {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+	if s.cmd == nil || s.startedAt.IsZero() {
+		return ""
+	}
+	return s.startedAt.Format(time.RFC3339)
 }
 
 func interfaceStatus() (bool, []string) {
@@ -221,6 +233,7 @@ func (s *Supervisor) buildStatus() StatusResponse {
 		CAConfigured:   caConfigured(),
 		CertConfigured: certConfigured(),
 		NebulaVersion:  nebulaVersion(),
+		StartedAt:      s.startedAtRFC3339(),
 	}
 	if raw := certInfo(); raw != nil {
 		st.CertInfo = raw

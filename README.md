@@ -74,7 +74,8 @@ All endpoints are served on the plugin unix socket
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/status` | Daemon/interface state, overlay IPs, lighthouse reachability, node cert info, nebula version |
+| GET | `/status` | Daemon/interface state, overlay IPs, lighthouse reachability, node cert info, nebula version, daemon start time |
+| GET | `/topology` | Overlay graph for SPR's topology view (see below) |
 | GET | `/config` | Plugin config + `CAConfigured`/`CertConfigured` (never any key material) |
 | PUT | `/config` | Validate + save config, regenerate `nebula.yml`, (re)start or stop the daemon |
 | POST | `/restart` | Regenerate config and restart nebula |
@@ -82,6 +83,24 @@ All endpoints are served on the plugin unix socket
 | GET | `/ca` | CA certificate (public part) |
 | POST | `/certs` | Sign a node cert. Body: `{"Name","IP","Groups","Duration","Install"}`. Returns `{Cert,Key}` — the key appears **only in this response** and is not stored. With `Install:true` the pair becomes this router's identity (`host.crt`/`host.key`, key persisted 0600, not returned) |
 | POST | `/keys/import` | Import `{"CACert","HostCert","HostKey"}` PEM to join an existing network (host cert+key must come together) |
+
+### Topology (`GET /topology`)
+
+The plugin contributes its overlay graph to SPR's router topology view
+(`"HasTopology": true` in `plugin.json`). The response is
+`{"Nodes":[...],"Edges":[...]}` using the same node/edge shapes as
+spr-tailscale:
+
+- a root anchor node `{"ID":"root","ConnType":"nebula","Online":true}` —
+  the SPR host merges the plugin graph into the router topology at this node
+- one node per configured lighthouse (`Kind:"lighthouse"`) and per static
+  host map entry (`Kind:"host"`), with `IP` set to the overlay IP. `Online`
+  comes from the live lighthouse reachability probe where one ran, otherwise
+  it reflects the daemon being up
+- one edge per node toward the root: `{"From":"<overlay IP>","To":"root",
+  "Layer":"nebula","Kind":"nebula"}`
+
+When the nebula daemon is not running the graph is the root anchor only.
 
 ### Configuration reference (`PUT /config`)
 

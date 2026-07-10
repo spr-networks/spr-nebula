@@ -5,6 +5,7 @@
   "URI": "spr-nebula",
   "HasUI": true,
   "Icon": "ChartNetwork",
+  "HasTopology": true,
   "SandboxedUI": false,
   "InstallTokenPath": "/configs/plugins/spr-nebula/api-token",
   "NetworkCapabilities": {
