@@ -267,9 +267,14 @@ export default function Plugin() {
   const [certGroups, setCertGroups] = useState('')
   const [certErrors, setCertErrors] = useState({})
   const [issuing, setIssuing] = useState(false)
+  const [routerName, setRouterName] = useState('')
+  const [routerIP, setRouterIP] = useState('')
+  const [routerGroups, setRouterGroups] = useState('')
+  const [routerErrors, setRouterErrors] = useState({})
   const [installing, setInstalling] = useState(false)
+  const [showRouterIdentityForm, setShowRouterIdentityForm] = useState(false)
   const [showInstallConfirm, setShowInstallConfirm] = useState(false)
-  const [issued, setIssued] = useState(null) // {Cert, Key, Installed}
+  const [issued, setIssued] = useState(null) // {Cert, Key, Installed, RequestedName}
   const [ackKeySaved, setAckKeySaved] = useState(false)
 
   // import state
@@ -442,30 +447,72 @@ export default function Plugin() {
     return Object.keys(errs).length === 0
   }
 
-  const issueCert = (install) => {
-    if (!validateCertForm()) {
-      return
+  const validateRouterForm = () => {
+    const errs = {}
+    if (!routerName.trim().length) {
+      errs.name = 'Router name is required'
     }
+    if (!routerIP.trim().length) {
+      errs.ip = cidr
+        ? `Pick this router's address inside ${cidr}`
+        : 'Router overlay IP is required (CIDR notation, e.g. 192.168.100.1/24)'
+    }
+    setRouterErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const submitCert = ({ name, ip, groups, install }) => {
     const setBusy = install ? setInstalling : setIssuing
     setBusy(true)
     api
       .post(`${PLUGIN_BASE}/certs`, {
-        Name: certName.trim(),
-        IP: certIP.trim(),
-        Groups: csv(certGroups),
+        Name: name.trim(),
+        IP: ip.trim(),
+        Groups: csv(groups),
         Install: !!install
       })
       .then((res) => {
         setAckKeySaved(false)
-        setIssued(res)
+        setIssued({ ...res, RequestedName: name.trim() })
         if (res.Installed) {
-          alert.success("Certificate installed as this router's identity")
+          alert.success("This router's Nebula identity was installed")
           setCertConfigured(true)
           refreshStatus()
         }
       })
       .catch((err) => alert.error('Failed to issue certificate', err))
       .finally(() => setBusy(false))
+  }
+
+  const issueDeviceCert = () => {
+    if (!validateCertForm()) return
+    submitCert({
+      name: certName,
+      ip: certIP,
+      groups: certGroups,
+      install: false
+    })
+  }
+
+  const installRouterIdentity = () => {
+    if (!validateRouterForm()) return
+    setShowRouterIdentityForm(false)
+    submitCert({
+      name: routerName,
+      ip: routerIP,
+      groups: routerGroups,
+      install: true
+    })
+  }
+
+  const openRouterIdentityForm = () => {
+    const currentNetworks = (certDetails && (certDetails.networks || certDetails.ips)) || []
+    const currentGroups = (certDetails && certDetails.groups) || []
+    if (!routerName) setRouterName((certDetails && certDetails.name) || 'spr-router')
+    if (!routerIP && currentNetworks.length) setRouterIP(currentNetworks[0])
+    if (!routerGroups && currentGroups.length) setRouterGroups(currentGroups.join(', '))
+    setRouterErrors({})
+    setShowRouterIdentityForm(true)
   }
 
   const importKeys = () => {
@@ -967,10 +1014,55 @@ export default function Plugin() {
 
       <Card>
         <SectionHeader
-          title="Issue device certificate"
+          title="This router's identity"
           right={<ConfiguredChip ok={certConfigured} label="Router identity" />}
         />
         <VStack space="md">
+          <Text size="sm" color="$muted500">
+            This certificate identifies the SPR router itself as one Nebula
+            node. It is separate from certificates issued to laptops, phones,
+            servers, and other devices.
+          </Text>
+          {certConfigured && certDetails ? (
+            <VStack space="xs">
+              <KeyVal label="Router name" value={certDetails.name || '—'} mono />
+              <KeyVal
+                label="Router overlay IP"
+                value={(certDetails.networks || certDetails.ips || []).join(', ') || '—'}
+                mono
+              />
+            </VStack>
+          ) : null}
+          <HStack space="sm" alignItems="center" flexWrap="wrap">
+            <Button
+              size="sm"
+              variant={certConfigured ? 'outline' : 'solid'}
+              action={certConfigured ? 'negative' : 'primary'}
+              onPress={openRouterIdentityForm}
+              isDisabled={!caConfigured || installing || issuing}
+            >
+              <ButtonText>
+                {installing
+                  ? 'Installing…'
+                  : certConfigured
+                    ? 'Replace router identity…'
+                    : 'Set up router identity…'}
+              </ButtonText>
+            </Button>
+            {!caConfigured ? (
+              <Text size="xs" color="$muted500">Create or import a CA first.</Text>
+            ) : null}
+          </HStack>
+        </VStack>
+      </Card>
+
+      <Card>
+        <SectionHeader title="Certificates for other devices" />
+        <VStack space="md">
+          <Text size="sm" color="$muted500">
+            Issue credentials for a laptop, phone, server, or another Nebula
+            node. This does not change this router's identity.
+          </Text>
           <TextField
             label="Device name"
             value={certName}
@@ -991,7 +1083,7 @@ export default function Plugin() {
             placeholder={cidr ? `e.g. an address in ${cidr}` : '192.168.100.5/24'}
             helper={
               cidr
-                ? 'Prefix defaults to the network CIDR'
+                ? `Use this device's unique host address inside ${cidr}; the prefix defaults from the network CIDR`
                 : 'Use CIDR notation, or set the network CIDR on the Network tab'
             }
             error={certErrors.ip || undefined}
@@ -1003,29 +1095,17 @@ export default function Plugin() {
             placeholder="laptop, home"
             helper="Used by nebula firewall rules on other nodes"
           />
-          <HStack space="sm" flexWrap="wrap">
-            <Button size="sm" onPress={() => issueCert(false)} isDisabled={!caConfigured || issuing || installing}>
-              <ButtonText>{issuing ? 'Issuing…' : 'Issue certificate'}</ButtonText>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onPress={() => {
-                if (!validateCertForm()) return
-                if (certConfigured) {
-                  setShowInstallConfirm(true)
-                } else {
-                  issueCert(true)
-                }
-              }}
-              isDisabled={!caConfigured || issuing || installing}
-            >
-              <ButtonText>{installing ? 'Installing…' : 'Issue & install as router identity'}</ButtonText>
-            </Button>
-          </HStack>
+          <Button
+            size="sm"
+            alignSelf="flex-start"
+            onPress={issueDeviceCert}
+            isDisabled={!caConfigured || issuing || installing}
+          >
+            <ButtonText>{issuing ? 'Issuing…' : 'Issue device certificate'}</ButtonText>
+          </Button>
           <Text size="xs" color="$muted500">
             {caConfigured
-              ? '“Issue certificate” shows the key once for another device. “Install as router identity” keeps the key on the router and restarts nebula.'
+              ? 'The certificate and private key are shown once. Save both on the named device; its private key is not stored on this router.'
               : 'Create or import a CA first.'}
           </Text>
         </VStack>
@@ -1126,15 +1206,82 @@ export default function Plugin() {
         destructive
       />
 
+      <ModalForm
+        isOpen={showRouterIdentityForm}
+        onClose={() => setShowRouterIdentityForm(false)}
+        title={certConfigured ? 'Replace this router identity' : 'Set up this router identity'}
+      >
+        <VStack space="md" pb="$2">
+          <Text size="sm" color="$muted500">
+            These values belong to this SPR router—not to another device. The
+            generated private key stays on the router and Nebula restarts with
+            the new identity.
+          </Text>
+          <TextField
+            label="Router name"
+            value={routerName}
+            onChangeText={(v) => {
+              setRouterName(v)
+              if (routerErrors.name) setRouterErrors({ ...routerErrors, name: '' })
+            }}
+            placeholder="spr-router"
+            error={routerErrors.name || undefined}
+          />
+          <TextField
+            label="Router overlay IP"
+            value={routerIP}
+            onChangeText={(v) => {
+              setRouterIP(v)
+              if (routerErrors.ip) setRouterErrors({ ...routerErrors, ip: '' })
+            }}
+            placeholder={cidr ? `e.g. this router's address in ${cidr}` : '192.168.100.1/24'}
+            helper={
+              cidr
+                ? `Use this router's unique host address inside ${cidr}; the prefix defaults from the network CIDR`
+                : 'Use CIDR notation, or set the network CIDR on the Network tab'
+            }
+            error={routerErrors.ip || undefined}
+          />
+          <TextField
+            label="Router groups (optional)"
+            value={routerGroups}
+            onChangeText={setRouterGroups}
+            placeholder="router, lighthouse"
+            helper="Groups assigned only to this SPR router"
+          />
+          <HStack justifyContent="flex-end">
+            <Button
+              size="sm"
+              action={certConfigured ? 'negative' : 'primary'}
+              onPress={() => {
+                if (!validateRouterForm()) return
+                if (certConfigured) {
+                  setShowRouterIdentityForm(false)
+                  setShowInstallConfirm(true)
+                } else {
+                  installRouterIdentity()
+                }
+              }}
+              isDisabled={installing}
+            >
+              <ButtonText>
+                {installing
+                  ? 'Installing…'
+                  : certConfigured
+                    ? 'Review replacement…'
+                    : 'Install router identity'}
+              </ButtonText>
+            </Button>
+          </HStack>
+        </VStack>
+      </ModalForm>
+
       <ModalConfirm
         isOpen={showInstallConfirm}
         onClose={() => setShowInstallConfirm(false)}
-        onConfirm={() => {
-          setShowInstallConfirm(false)
-          issueCert(true)
-        }}
+        onConfirm={installRouterIdentity}
         title="Replace this router's identity?"
-        message={`The current router certificate and key are overwritten with a new identity for "${certName.trim()}", and nebula restarts. Peers pinned to the old certificate details may need updating.`}
+        message={`The current router certificate and key are overwritten with a new identity for "${routerName.trim()}", and Nebula restarts. This does not affect certificates already issued to other devices.`}
         confirmText="Replace identity"
         destructive
       />
@@ -1183,7 +1330,7 @@ export default function Plugin() {
             <PemBlock
               label="Certificate"
               value={issued.Cert || ''}
-              filename={`${certName.trim() || 'node'}.crt`}
+              filename={`${issued.RequestedName || 'node'}.crt`}
               onCopied={() => alert.success('Copied certificate')}
             />
             {keyPending ? (
@@ -1191,7 +1338,7 @@ export default function Plugin() {
                 <PemBlock
                   label="Private key (shown once)"
                   value={issued.Key}
-                  filename={`${certName.trim() || 'node'}.key`}
+                  filename={`${issued.RequestedName || 'node'}.key`}
                   onCopied={() => alert.success('Copied private key')}
                 />
                 <ToggleRow
