@@ -1,6 +1,6 @@
 {
   "Name": "spr-nebula",
-  "ComposeFilePath": "plugins/user/spr-nebula/docker-compose.yml",
+  "ComposeFilePath": "plugins/user/spr-nebula/docker-compose-krun.yml",
   "UnixPath": "/state/plugins/spr-nebula/socket",
   "URI": "spr-nebula",
   "HasUI": true,
@@ -9,7 +9,8 @@
   "SandboxedUI": false,
   "InstallTokenPath": "/configs/plugins/spr-nebula/api-token",
   "NetworkCapabilities": {
-    "Interface": "spr-nebula",
+    "Interface": "knebula0",
+    "DeviceMAC": "02:53:50:52:4b:0b",
     "Policies": ["wan", "dns"],
     "Groups": ["nebula"]
   },

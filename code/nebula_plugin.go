@@ -14,11 +14,11 @@ import (
 	"path/filepath"
 )
 
-var UNIX_PLUGIN_LISTENER = TEST_PREFIX + "/state/plugins/spr-nebula/socket"
+var UNIX_PLUGIN_LISTENER = TEST_PREFIX + "/run/spr-krun-plugin/spr-nebula.sock"
 
 // name of the docker bridge for this plugin's network (see docker-compose.yml
 // and plugin.json NetworkCapabilities.Interface)
-var gSPRNebulaInterface = "spr-nebula"
+var gSPRNebulaInterface = "knebula0"
 
 type nebulaPlugin struct {
 	sup *Supervisor
