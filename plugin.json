@@ -1,6 +1,6 @@
 {
   "Name": "spr-nebula",
-  "ComposeFilePath": "plugins/user/spr-nebula/docker-compose-krun.yml",
+  "Runtime": "kvm",
   "UnixPath": "/state/plugins/spr-nebula/socket",
   "URI": "spr-nebula",
   "HasUI": true,
