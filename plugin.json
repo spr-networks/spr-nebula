@@ -9,7 +9,7 @@
   "SandboxedUI": false,
   "InstallTokenPath": "/configs/plugins/spr-nebula/api-token",
   "NetworkCapabilities": {
-    "Interface": "knebula0",
+    "Interface": "spr-nebula",
     "DeviceMAC": "02:53:50:52:4b:0b",
     "Policies": ["wan", "dns"],
     "Groups": ["nebula"]
