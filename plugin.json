@@ -6,7 +6,7 @@
   "HasUI": true,
   "Icon": "ChartNetwork",
   "HasTopology": true,
-  "SandboxedUI": false,
+  "SandboxedUI": true,
   "NetworkCapabilities": {
     "Interface": "spr-nebula",
     "DeviceMAC": "02:53:50:52:4b:0b",
