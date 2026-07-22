@@ -1,14 +1,15 @@
 {
   "Name": "spr-nebula",
-  "ComposeFilePath": "plugins/user/spr-nebula/docker-compose.yml",
+  "Runtime": "kvm",
   "UnixPath": "/state/plugins/spr-nebula/socket",
   "URI": "spr-nebula",
   "HasUI": true,
   "Icon": "ChartNetwork",
   "HasTopology": true,
-  "SandboxedUI": false,
+  "SandboxedUI": true,
   "NetworkCapabilities": {
     "Interface": "spr-nebula",
+    "DeviceMAC": "02:53:50:52:4b:0b",
     "Policies": ["wan", "dns"],
     "Groups": ["nebula"]
   },
