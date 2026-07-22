@@ -71,7 +71,7 @@ static host map, Save.
 ## API
 
 All endpoints are served on the plugin unix socket
-(`/state/plugins/spr-nebula/socket`) and proxied by SPR at
+(`/state/plugins/spr-nebula/socket.sock`) and proxied by SPR at
 `/plugins/spr-nebula/…` with SPR API authentication.
 
 | Method | Path | Description |
