@@ -7,7 +7,6 @@
   "Icon": "ChartNetwork",
   "HasTopology": true,
   "SandboxedUI": false,
-  "InstallTokenPath": "/configs/plugins/spr-nebula/api-token",
   "NetworkCapabilities": {
     "Interface": "spr-nebula",
     "Policies": ["wan", "dns"],
