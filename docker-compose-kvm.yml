@@ -3,7 +3,7 @@ services:
     extends:
       file: docker-compose.yml
       service: spr-nebula
-    image: ghcr.io/spr-networks/spr-nebula:${RELEASE_VERSION:-latest}${RELEASE_CHANNEL:--krun}
+    image: ghcr.io/spr-networks/spr-nebula:latest
     runtime: ${SPR_KRUN_RUNTIME:-spr-krun}
     annotations:
       krun.cpus: "${SPR_KRUN_CPUS:-1}"

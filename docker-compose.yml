@@ -9,7 +9,7 @@ x-labels:
 services:
   spr-nebula:
     container_name: spr-nebula
-    image: ghcr.io/spr-networks/spr-nebula:${RELEASE_VERSION:-latest}${RELEASE_CHANNEL:-}
+    image: ghcr.io/spr-networks/spr-nebula:latest
     build:
       context: "${BUILDCTX:-.}"
       labels: *default-labels
